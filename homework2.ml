@@ -28,28 +28,83 @@ Remarks, if any:
 (* QUESTION 1 *)
 
 
-let prepend (letter, lang) = failwith "not implemented"
+let prepend (letter, lang) =
+  let rec prependHelper (a, bs, final) =
+    match bs with
+      | [] -> final
+      | head :: tail -> prependHelper(a, tail, (a^head) :: final)
+  in
+  prependHelper(letter, lang, [])
 
+let rec append (xs,ys) =
+  match xs with
+    | [] -> ys
+    | head :: tail -> head :: append(tail, ys)
 
-let concatenate (alphabet, lang) = failwith "not implemented"
+let concatenate (alphabet, lang) =
+  let rec cHelper (ss, bs, final) =
+    match ss with
+      | [] -> final
+      | head :: tail -> cHelper(tail, bs, append(prepend(head, bs), final))
+  in
+  cHelper(alphabet, lang, [])
 
-
-let all_strings (alphabet, n) = failwith "not implemented"
+let all_strings (alphabet, n) =
+  let rec allStringsUpTo (alphabet, lastAddedLang, lang, i) =
+    if i > n then
+      "" :: lang
+    else
+      let newLang = concatenate(alphabet, lastAddedLang) in
+      allStringsUpTo(alphabet, newLang, append(newLang, lang), i+1)
+  in
+  allStringsUpTo(alphabet, [""], [], 1)
 
 
 
 (* QUESTION 2 *)
 
-let restrict (xs,n) = failwith "not implemented"
+let restrict (xs,n) =
+  let rec removeIfTooLong (xs, accum, maxLength) =
+    match xs with
+      | [] -> accum
+      | head :: tail ->
+        if String.length(head) > maxLength then
+          removeIfTooLong(tail, accum, maxLength)
+        else
+          removeIfTooLong(tail, head :: accum, maxLength)
+  in
+  removeIfTooLong(xs, [], n)
+
+(* Shameless reuse from hw1 *)
+let rec setIn (e,xs) =
+  match xs with
+    | [] -> false
+    | head :: tail -> if head = e then true else setIn(e, tail)
+
+let setUnion (xs,ys) =
+  let rec removeDuplicates(xs, final) =
+    match xs with
+      | [] -> final
+      | head :: tail ->
+        if setIn(head, final) = false then
+          removeDuplicates(tail, append(final, [head]))
+          (* head :: final would be quicker but I want to maintain order *)
+        else removeDuplicates(tail, final)
+  in
+  removeDuplicates(append(xs,ys), [])
+  (* append on its own would work if I didn't want to remove duplicates *)
 
 
-let langUnion (xs,ys,n) = failwith "not implemented"
+let langUnion (xs,ys,n) =
+  setUnion(restrict(xs, n), restrict(ys, n))
 
 
-let langConcat (xs,ys,n) = failwith "not implemented"
+let langConcat (xs,ys,n) =
+  restrict(concatenate(xs, ys), 4)
 
 
-let langStar (xs,n) = failwith "not implemented"
+let langStar (xs,n) =
+  restrict(all_strings(xs, n), n)
 
 
 
