@@ -49,15 +49,15 @@ let concatenate (alphabet, lang) =
   in
   cHelper(alphabet, lang, [])
 
+let rec allStringsUpTo (alphabet, lastAddedLang, lang, i, n) =
+  if i > n then
+    "" :: lang
+  else
+    let newLang = concatenate(alphabet, lastAddedLang) in
+    allStringsUpTo(alphabet, newLang, append(newLang, lang), i+1, n)
+
 let all_strings (alphabet, n) =
-  let rec allStringsUpTo (alphabet, lastAddedLang, lang, i) =
-    if i > n then
-      "" :: lang
-    else
-      let newLang = concatenate(alphabet, lastAddedLang) in
-      allStringsUpTo(alphabet, newLang, append(newLang, lang), i+1)
-  in
-  allStringsUpTo(alphabet, [""], [], 1)
+  allStringsUpTo(alphabet, [""], [], 1, n)
 
 
 
@@ -100,13 +100,19 @@ let langUnion (xs,ys,n) =
 
 
 let langConcat (xs,ys,n) =
-  restrict(concatenate(xs, ys), 4)
-
+  restrict(concatenate(xs, ys), n)
 
 let langStar (xs,n) =
-  restrict(all_strings(xs, n), n)
-
-
+  let sortByLength a b =
+    if String.length(a) = String.length(b) then 0 else
+      if String.length(a) > String.length(b) then 1 else -1
+  in
+  match xs with
+    | [] -> restrict(all_strings(xs, 1), n)
+    | h::t ->
+      let shortest = String.length(List.hd(List.sort sortByLength xs)) in
+      let reqIters = n/shortest in
+      restrict(all_strings(xs, reqIters), n)
 
 (* QUESTION 3 *)
 
@@ -211,15 +217,14 @@ let dump l =
                                  | s -> print_string ("  "^s^"\n")) l
 
 
-
 (* Placeholder for your regular expression. Replace "0" by your actual answer *)
 
-let regexp_a = "0"
+let regexp_a = "(a+b)(a+b)(a+b)"
 
-let regexp_b = "0"
+let regexp_b = "((a+b)(a+b)(a+b))*"
 
-let regexp_c = "0"
+let regexp_c = "b*ab*"
 
-let regexp_d = "0"
+let regexp_d = "b*ab*(aa)*b*"
 
-let regexp_e = "0"
+let regexp_e = "(a+ba)*"
