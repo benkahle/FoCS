@@ -225,6 +225,6 @@ let regexp_b = "((a+b)(a+b)(a+b))*"
 
 let regexp_c = "b*ab*"
 
-let regexp_d = "b*ab*(aa)*b*"
+let regexp_d = "b*ab*(ab*a)*b*"
 
 let regexp_e = "(a+ba)*"
