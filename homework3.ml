@@ -227,7 +227,6 @@ let isAcceptingAny (fa,qs) =
 let rec stepAll (fa,qs,a) =
   match qs with
     | [] -> []
-    | [q] -> keepTarget(findTransitions(fa, q, a))
     | q::t -> keepTarget(findTransitions(fa, q, a)) @ stepAll(fa, t, a)
   (* or... *)
   (* keepTarget(List.filter (fun (s, t, e) -> t = a && List.mem s qs) fa.delta) *)
