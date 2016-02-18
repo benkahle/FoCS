@@ -171,14 +171,39 @@ let all_pairings xs ys =
 
 (* QUESTION 3 *)
 
+(*
+  I'm not super happy with either of my solutions for either prefixes or suffixes.
+  Both lines for each function work but I believe the 2nd in each is a bit more straightforward
+  and possibly more performant.
+*)
+let prefixes xs =
+  (* List.fold_right (fun x res -> (List.rev (List.tl (List.rev (List.hd res)))) :: res) xs [xs] *)
+  (* List.fold_left (fun res x -> res @ [List.hd (List.rev res) @ [x]]) [[]] xs *)
+  List.fold_left (fun res x -> res @ [List.nth res ((List.length res)-1) @ [x]]) [[]] xs
 
-let prefixes xs =  failwith "prefixes not implemented"
+let suffixes xs =
+  (* List.fold_left (fun res x -> res @ [List.tl (List.hd (List.rev res))]) [xs] xs *)
+  List.fold_right (fun x res -> (x :: (List.hd res)) :: res) xs [[]]
 
+(* A terribly ugly, but working function *)
+let injectOLD a xs =
+  let (a, b, ans) = (List.fold_left (fun (oldH, shift::newTail, res) x ->
+    let newH = oldH @ [x] in
+    (newH, newTail, res @ [newH @ [a] @ newTail])
+  ) ([], xs, [[a] @ xs]) xs) in
+  ans
 
-let suffixes xs =  failwith "suffixes not implemented"
+(* A much nicer solution *)
+let inject a xs =
+  List.map2 (fun p s -> p @ [a] @ s) (prefixes xs) (suffixes xs)
 
-
-let inject a xs =  failwith "inject not implemented"
-
-
-let permutations xs =  failwith "permutations not implemented"
+let permutations xs =
+  List.fold_right (fun x res ->
+    match res with
+      | [] -> inject x []
+      | _::_ -> (
+        List.fold_right (fun ys prev ->
+          (inject x ys @ prev)
+        ) res []
+      )
+  ) xs []
