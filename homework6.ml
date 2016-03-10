@@ -295,17 +295,78 @@ let add1 =
 
 (* QUESTION 3 *)
 
+let structPerms =
+  { states = [("start", "x"); ("find", "x"); ("rw", "x"); ("end", "x"); ("acc", "x"); ("rej", "x")] @ pairs ["next";"match"] ["a";"b";"c";"d";"e";"f";"g";"h";"i";"j";"k";"l";"m";"n";"o";"p";"q";"r";"s";"t";"u";"v";"x";"y";"z"];
+    input_alphabet = ["#";"a";"b";"c";"d";"e";"f";"g";"h";"i";"j";"k";"l";"m";"n";"o";"p";"q";"r";"s";"t";"u";"v";"x";"y";"z"];
+    tape_alphabet = ["X";">";"_";"#";"a";"b";"c";"d";"e";"f";"g";"h";"i";"j";"k";"l";"m";"n";"o";"p";"q";"r";"s";"t";"u";"v";"x";"y";"z"];
+    start = ("start", "x");
+    accept = ("acc", "x");
+    reject = ("rej", "x");
+    blank = "_";
+    left_marker = ">";
+    delta = (fun x -> match x with
+      | (("start", "x"), ">") -> (("find", "x"), ">", 1)
 
-let permutation =
-  { states = ["x"];
-    input_alphabet = ["x"];
-    tape_alphabet = ["x"];
-    start = "x";
-    accept = "x";
-    reject = "x";
-    blank = "x";
-    left_marker = "x";
-    delta = (fun x -> ("x","x",0)) }
+      | (("find", "x"), "X") -> (("find", "x"), "X", 1)
+      | (("find", "x"), "#") -> (("end", "x"), "#", 1)
+      | (("find", "x"), sym) -> (("next", sym), "X", 1) (*Reject?*)
+
+      | (("end", "x"), "X") -> (("end", "x"), "X", 1)
+      | (("end", "x"), "_") -> (("acc", "x"), "_", 1)
+
+      | (("next", sym), "_") -> (("rej", "x"), "_", 1)
+      | (("next", sym), "#") -> (("match", sym), "#", 1)
+      | (("next", sym), any) -> (("next", sym), any, 1)
+
+      | (("match", sym), "_") -> (("rej", "x"), "_", 1)
+      | (("match", sym), ch) when (sym = ch) -> (("rw", "x"), "X", 0)
+      | (("match", sym), any) -> (("match", sym), any, 1)
+
+      | (("rw", "x"), ">") -> (("find", "x"), ">", 1)
+      | (("rw", "x"), any) -> (("rw", "x"), any, 0)
+
+      | ((_,sym), any) -> (("rej", "x"),any,1)
+    )
+  }
+let pairStringTransform (x, y) = x^"/"^y
+let permutation = transform structPerms pairStringTransform
 
 
-let copies n = failwith "copies not implemented yet"
+let copies n =
+  if (n <= 0) then failwith "Length must be greater than 0" else
+  let structCopies =
+    {
+      states = [("start", -1, "-1");("acc", -1, "-1");("rej", -1, "-1");("rw", -1, "-1");] @ triples ["find"; "next"] (range n) ["0";"1";"#";"_"];
+      input_alphabet = ["#";"0";"1"];
+      tape_alphabet = ["#";"0";"1";"_";">";"X"];
+      start = ("start", -1, "-1");
+      accept = ("acc", -1, "-1");
+      reject = ("rej", -1, "-1");
+      blank = "_";
+      left_marker = ">";
+      delta = (fun x -> match x with
+        | (("start", -1, "-1"), ">") -> (("find", n, "#"), ">", 1)
+
+        | (("find", 0, "#"), "#") -> (("rej", -1, "-1"), "#", 1) (*You've gone too far!*)
+        | (("find", h, m), "X") -> (("find", h, m), "X", 1)
+        | (("find", h, m), "#") -> (("find", h-1, "#"), "#", 1)
+        | (("find", 1, "#"), "_") -> (("acc", -1, "-1"), "_", 1)
+        | (("find", h, m), any) when (h = n) -> (("next", h, any), "X", 1)
+        | (("find", h, m), a) when (m = a) -> (("next", h, a), "X", 1)
+
+        | (("next", 1, m), "_") when (m = "#" || m = "_") -> (("acc", -1, "-1"), "_", 1)
+        | (("next", 1, m), "#") -> (("rej", -1, "-1"), "#", 1)
+        | (("next", 1, m), any) -> (("rw", -1, "-1"), any, 0)
+        | (("next", h, m), "#") -> (("find", h-1, m), "#", 1)
+        | (("next", h, m), "_") -> (("rej", -1, "-1"), "_", 1)
+        | (("next", h, m), any) -> (("next", h, m), any, 1)
+
+        | (("rw", -1, "-1"), ">") -> (("find", n, "#"), ">", 1)
+        | (("rw", -1, "-1"), any) -> (("rw", -1, "-1"), any, 0)
+
+        | ((_, h, mem), any) -> (("rej", -1, "-1"), any, 1)
+      )
+    }
+  in
+  let copiesTransform (x, y, z) = x^"/"^(string_of_int y)^"/"^z in
+  transform structCopies copiesTransform
