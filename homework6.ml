@@ -147,7 +147,10 @@ let transformStates states f =
   List.map (fun state -> f state) states
 
 let find_original states f target =
-  List.find (fun state -> if (f state) = target then true else false) states
+  try
+    List.find (fun state -> if (f state) = target then true else false) states
+  with
+    Not_found -> failwith "state not found"
 
 let transformDelta states delta f =
   (fun (p, a) ->
@@ -328,7 +331,9 @@ let structPerms =
       | ((_,sym), any) -> (("rej", "x"),any,1)
     )
   }
+
 let pairStringTransform (x, y) = x^"/"^y
+
 let permutation = transform structPerms pairStringTransform
 
 
