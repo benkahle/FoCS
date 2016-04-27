@@ -172,26 +172,38 @@ let rec fold f init_s s =
 
 let running_max s = fold (fun v l -> if v > l then v else l) (cst 0) s
 
-let rec stutter s = failwith "not implemented"
+let rec stutter s = fby (s) (fun () -> (fby (s) (fun () -> (stutter (drop s)))))
 
 
-
+let natsf =
+  let rec natsfF () = fby (cst 0.) (fun () -> (map (fun x -> x+.1.) (natsfF ()))) in
+    natsfF()
+let evensf = map (fun x -> 2.*.x) natsf
+let oddsf = map (fun x -> x+.1.) evensf
+let scalef n s = map (fun x -> n*.x) s
+let addf s1 s2 = map (fun (a, b) -> a+.b) (zip s1 s2)
+let rec psums s = fby (s) (fun () -> map (fun (a,b) -> a+b) (zip (psums s) (drop s)))
+let rec psumsf s = fby (s) (fun () -> map (fun (a,b) -> a+.b) (zip (psumsf s) (drop s)))
 (*
  * QUESTION 2
  *
  *)
 
-let rec arctan z = failwith "not implemented"
+let rec arctan z = psumsf (map (fun ((x, odd), nat) -> if (nat mod 2 = 0) then (x**odd)/.odd else -.(x**odd)/.odd) (zip (zip (cst z) oddsf) nats))
 
 (* PLACEHOLDER -- REPLACE WITH YOUR OWN DEFINITION *)
 
-let pi = cst (0)
+let pi = addf (scalef 16. (arctan (1./.5.))) (scalef (-.4.) (arctan (1./.239.)))
 
-let rec newton f df guess = failwith "not implemented"
+let rec newton f df guess = fby (cst guess)
+  ( fun () ->
+    let gs = (newton f df guess) in
+    addf (gs) (scalef (-1.0) (map (fun (n,d) -> n/.d) (zip (map f gs) (map df gs))))
+  )
 
-let derivative f x = failwith "not implemented"
+let derivative f x = map (fun n -> ((f (x +. 1./.n)) -. (f x))/.(1./.n)) (drop natsf)
 
-let limit epsilon s = failwith "not implemented"
+let limit epsilon s = filter (fun a b -> if abs_float (a-.b) < epsilon then true else false) (drop s) s
 
 
 (*
@@ -200,12 +212,21 @@ let limit epsilon s = failwith "not implemented"
  *)
 
 
-let rev_prefixes s = failwith "not implemented"
+let rec rev_prefixes s = fby (map (fun a -> [a]) s) (fun () -> map (fun (a,b) -> a::b) (zip (drop s) (rev_prefixes s)))
 
-let prefixes s = failwith "not implemented"
+let rec prefixes s = fby (map (fun a -> [a]) s) (fun () -> map (fun (a,b) -> b@[a]) (zip (drop s) (prefixes s)))
 
-let stripes s1 s2 = failwith "not implemented"
+let stripes s1 s2 = map (fun (la, lb) -> List.map2 (fun a b -> (a,b)) la lb) (zip (prefixes s1) (rev_prefixes s2))
 
-let rec flatten ss = failwith "not implemented"
+let first s = let (f,r) = split s in f
 
-let pairs s1 s2 =  failwith "not implemented"
+let rec flatten ss =
+  let nonEmpties = (filter (fun a b -> if a = [] then false else true) ss ss) in
+  fby (map (fun l -> List.hd l) nonEmpties)
+  (fun () -> flatten (
+      fby (map (fun l -> List.tl l) nonEmpties)
+      (fun () -> drop nonEmpties)
+    )
+  )
+
+let pairs s1 s2 =  flatten (stripes s1 s2)
